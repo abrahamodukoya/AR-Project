@@ -125,7 +125,7 @@ def display_result(pred_char, video_frame, grey, matrix, distortion):
 
 def update_scene():
     # TODO: run prediction here
-    # TODO: figure out what transformations projectPoints uses, and try to recreate them for the model matrix
+    # TODO: figure out how to use perspective/projection matrix
     # global curr_model, curr_img
     # print('updating scene')
     video_frame = video_stream.read()
@@ -139,15 +139,22 @@ def update_scene():
         rmat = np.identity(4)
         rodrigues_mat, _ = cv.Rodrigues(rvecs)
         rmat[0:3, 0:3] = rodrigues_mat
+        rmat[0, 1] = -rmat[0, 1]
+        rmat[1, 0] = -rmat[1, 0]
         rmat = np.transpose(rmat)
         ogl.curr_camera_model = np.identity(4)
         tvecs = tvecs.flatten()
-        # tvecs[2] = -tvecs[2]
-        # tvecs[1] = -tvecs[1]
+        # swap y and z
+        # tmp = tvecs[1]
+        # tvecs[1] = tvecs[2]
+        # tvecs[2] = tmp
+        tvecs[2] = -tvecs[2]
+        tvecs[1] = -tvecs[1]
+        tvecs[0] = -tvecs[0]
         tmat = np.identity(4)
         # trying column-major order
-        tmat[-1, 0:3] = tvecs
-        tmat = 0.05 * tmat
+        tmat[0:3, 3] = 0.05 * tvecs
+        tmat = np.transpose(tmat)
         scale_mat = np.identity(4)
         scale_mat[0, 0] = 0.05
         scale_mat[1, 1] = 0.05
@@ -158,7 +165,7 @@ def update_scene():
         rot_mat[1, 2] = 1
         rot_mat[2, 1] = -1
         rot_mat[2, 2] = 0
-        # change sign of y
+        # change sign of y (may need to do the same for z)
         change_y_mat = np.identity(4)
         change_y_mat[1, 1] = -change_y_mat[1, 1]
         inverse_matrix = np.transpose(np.array([[ 1.0, 1.0, 1.0, 1.0],
@@ -167,7 +174,8 @@ def update_scene():
                                [ 1.0, 1.0, 1.0, 1.0]]))
         # ogl.curr_camera_model = tmat @ rmat @ scale_mat @ rot_mat #@ inverse_matrix
         # ogl.curr_camera_model = tmat @ scale_mat #@ ogl.curr_camera_model #@ inverse_matrix
-        ogl.curr_camera_model = rmat @ scale_mat @ change_y_mat# np.transpose(ogl.curr_camera_model)
+        # tmat first because we're using column major order
+        ogl.curr_camera_model = rmat @ scale_mat @ change_y_mat @ tmat# np.transpose(ogl.curr_camera_model)
     else:
         ogl.curr_model = None
     glutPostRedisplay()
@@ -176,8 +184,8 @@ def update_scene():
 
 def main():
     global curr_pred_char, curr_video_frame, matrix, distortion, video_stream
-    print('loading eigenspace...')
-    eigenspace = np.load('eigenspace.npy')
+    # print('loading eigenspace...')
+    # eigenspace = np.load('eigenspace.npy')
     print('loading classifier...')
     knn_classifier = load('knn_classifier.joblib')
     print('loading camera parameters...')

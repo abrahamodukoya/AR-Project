@@ -299,7 +299,7 @@ def display():  # , img_shader_program, img_vao, img_vbo, img_texture):
     # glEnable(GL_LIGHTING)
 
     if curr_model is not None:
-        # print('should be drawing a model')
+        print('should be drawing a model')
         glEnable(GL_DEPTH_TEST)
         curr_model.use()
         curr_model.draw()
