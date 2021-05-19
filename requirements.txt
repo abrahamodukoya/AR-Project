@@ -1,1 +1,10 @@
 scikit-learn==0.22.2.post1
+imutils~=0.5.4
+numpy~=1.19.5
+joblib~=1.0.1
+Pillow~=5.1.0
+PyOpenGL~=3.1.5
+PyOpenGL_accelerate~=3.1.5
+opencv-contrib-python~=4.5.1.48
+opencv-python~=4.5.1.48
+assimp-py~=1.0.2
