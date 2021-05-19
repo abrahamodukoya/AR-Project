@@ -20,7 +20,7 @@ i_points = np.float32([[0, 0, 0], [2, 0, 0], [1, 0, 0], [1, 0, -4], [0, 0, -4], 
 o_points = np.float32([[2, 0, -2]])
 u_points = np.float32([[2, 0, -2]])
 
-curr_pred_char = 'A'
+curr_pred_char = 'U'
 curr_video_frame = np.zeros((640, 480, 3))
 matrix = None
 distortion = None
@@ -139,8 +139,8 @@ def update_scene():
         rmat = np.identity(4)
         rodrigues_mat, _ = cv.Rodrigues(rvecs)
         rmat[0:3, 0:3] = rodrigues_mat
-        rmat[0, 1] = -rmat[0, 1]
-        rmat[1, 0] = -rmat[1, 0]
+        #rmat[0, 1] = -rmat[0, 1]
+        #rmat[1, 0] = -rmat[1, 0]
         rmat = np.transpose(rmat)
         ogl.curr_camera_model = np.identity(4)
         tvecs = tvecs.flatten()
@@ -148,13 +148,14 @@ def update_scene():
         # tmp = tvecs[1]
         # tvecs[1] = tvecs[2]
         # tvecs[2] = tmp
-        tvecs[2] = -tvecs[2]
+        tvecs[2] = -tvecs[2] #if -tvecs[2] > 0 else 0
         tvecs[1] = -tvecs[1]
         tvecs[0] = -tvecs[0]
         tmat = np.identity(4)
         # trying column-major order
         tmat[0:3, 3] = 0.05 * tvecs
         tmat = np.transpose(tmat)
+        print(tmat[-1])
         scale_mat = np.identity(4)
         scale_mat[0, 0] = 0.05
         scale_mat[1, 1] = 0.05
@@ -165,9 +166,10 @@ def update_scene():
         rot_mat[1, 2] = 1
         rot_mat[2, 1] = -1
         rot_mat[2, 2] = 0
-        # change sign of y (may need to do the same for z)
-        change_y_mat = np.identity(4)
-        change_y_mat[1, 1] = -change_y_mat[1, 1]
+        # change sign of x, y (may need to do the same for z)
+        change_mat = np.identity(4)
+        change_mat[1, 1] = -change_mat[1, 1]
+        change_mat[0, 0] = -change_mat[0, 0]
         inverse_matrix = np.transpose(np.array([[ 1.0, 1.0, 1.0, 1.0],
                                [-1.0,-1.0,-1.0,-1.0],
                                [-1.0,-1.0,-1.0,-1.0],
@@ -175,7 +177,7 @@ def update_scene():
         # ogl.curr_camera_model = tmat @ rmat @ scale_mat @ rot_mat #@ inverse_matrix
         # ogl.curr_camera_model = tmat @ scale_mat #@ ogl.curr_camera_model #@ inverse_matrix
         # tmat first because we're using column major order
-        ogl.curr_camera_model = rmat @ scale_mat @ change_y_mat @ tmat# np.transpose(ogl.curr_camera_model)
+        ogl.curr_camera_model = rmat @ scale_mat @ change_mat @ tmat# np.transpose(ogl.curr_camera_model)
     else:
         ogl.curr_model = None
     glutPostRedisplay()

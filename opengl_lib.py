@@ -178,7 +178,7 @@ class ModelObject:
 
     def draw(self):
         self.model = curr_camera_model
-        # self.proj = perspective(33.7, (640 / 480), 0.1, 1000)
+        # self.proj = perspective(33.7, (640 / 480), 0.1, 100)
         glBindVertexArray(self.vao)
         sp_id = self.shader_program.shader_program_id
         self.set_up_texture()
