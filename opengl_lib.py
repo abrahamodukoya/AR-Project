@@ -4,7 +4,6 @@ import threading
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-# from OpenGL.raw.GL.VERSION.GL_2_0 import glUniformMatrix4fv
 from PIL import Image
 import numpy as np
 import assimp_py as asspy
@@ -73,7 +72,6 @@ class ShaderProgram:
 
     def link_program(self, vpos_index=7, vtex_index=9):
         glBindAttribLocation(self.shader_program_id, vpos_index, 'vertex_position')
-        # glBindAttribLocation(self.shader_program_id, 8, 'vertex_normal')
         glBindAttribLocation(self.shader_program_id, vtex_index, 'vertex_texture')
         glBindFragDataLocation(self.shader_program_id, 0, "fragColor")
         glLinkProgram(self.shader_program_id)
@@ -161,7 +159,6 @@ class ModelObject:
 
     def link_vbo_to_shaders(self):
         pos = glGetAttribLocation(self.shader_program.shader_program_id, "vertex_position")
-        # norm = glGetAttribLocation(self.shader_program.shader_program_id, "vertex_normal")
         texture = glGetAttribLocation(self.shader_program.shader_program_id, "vertex_texture")
 
         glBindVertexArray(self.vao)
@@ -169,9 +166,6 @@ class ModelObject:
         glEnableVertexAttribArray(pos)
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_vbo)
         glVertexAttribPointer(pos, 3, GL_FLOAT, GL_FALSE, 0, null)
-        # glEnableVertexAttribArray(norm)
-        # glBindBuffer(GL_ARRAY_BUFFER, self.normal_vbo)
-        # glVertexAttribPointer(norm, 3, GL_FLOAT, GL_FALSE, 0, 0)
 
         glEnableVertexAttribArray(texture)
         glBindBuffer(GL_ARRAY_BUFFER, self.texture_vbo)
@@ -179,12 +173,9 @@ class ModelObject:
 
     def draw(self):
         self.model = curr_camera_model
-        # self.proj = perspective(33.7, (640 / 480), 0.1, 100)
         glBindVertexArray(self.vao)
         sp_id = self.shader_program.shader_program_id
         self.set_up_texture()
-        # glActiveTexture(GL_TEXTURE0)
-        # glBindTexture(GL_TEXTURE_2D, self.tex)
         matrix_location = glGetUniformLocation(sp_id, "model")
         view_mat_location = glGetUniformLocation(sp_id, "view")
         proj_mat_location = glGetUniformLocation(sp_id, "proj")
@@ -215,24 +206,8 @@ class ImgObject(ModelObject):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.tex)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 640, 480, 0, GL_BGR, GL_UNSIGNED_BYTE, self.texture_image)
-        # glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        # glTexEnv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
-
-        # Parameteri -> Parameterf
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        # glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        # glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        # glEnable(GL_TEXTURE_2D)
-        # glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, 3, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE,
-        #             self.texture_image)
-        # glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        # glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        # glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        # glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-        # glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE)
-        # img_sampler = glGetUniformLocation(self.shader_program.shader_program_id, 'img')
-        # glUniform1i(img_sampler, 0)
 
     def draw(self):
         glLoadIdentity()
@@ -253,32 +228,8 @@ class ImgObject(ModelObject):
         glEnd()
         glPopMatrix()
 
-        # self.model[-1, 2] = -10
-        # self.proj = perspective(33.7, (640 / 480), 0.1, 100)
 
-        # sp_id = self.shader_program.shader_program_id
-        # matrix_location = glGetUniformLocation(sp_id, "model")
-        # view_mat_location = glGetUniformLocation(sp_id, "view")
-        # proj_mat_location = glGetUniformLocation(sp_id, "proj")
-        # tex_location = glGetUniformLocation(sp_id, "tex")
-        # glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, self.proj)
-        # glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, self.view)
-        # glUniformMatrix4fv(matrix_location, 1, GL_FALSE, self.model)
-        # glUniform1i(tex_location, 0)
-        # glDrawArrays(GL_QUADS, 0, 12)
-
-    # def link_vbo_to_shaders(self):
-    #     a_pos = glGetAttribLocation(self.shader_program.shader_program_id, "aPos")  # 3
-    #     glBindBuffer(GL_ARRAY_BUFFER, self.vertex_vbo)
-    #     glBindVertexArray(self.vao)
-    #     glEnableVertexAttribArray(a_pos)
-    #     glVertexAttribPointer(a_pos, 3, GL_FLOAT, False, 0, 0)
-
-
-def display():  # , img_shader_program, img_vao, img_vbo, img_texture):
-    # glDisable(GL_DEPTH_TEST)
-    # glEnable(GL_DEPTH_TEST)
-    # glDepthFunc(GL_LESS)
+def display():
     glClearColor(0, 0, 0, 0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glMatrixMode(GL_PROJECTION)
@@ -287,20 +238,11 @@ def display():  # , img_shader_program, img_vao, img_vbo, img_texture):
     glMatrixMode(GL_MODELVIEW)
 
     # image background
-    # glDepthFunc(GL_LEQUAL)
-    # glLoadIdentity()
-    # glEnable(GL_TEXTURE_2D)
     if curr_img is not None:
-        # print('should be drawing the camera frame')
-        # curr_img.use()
         glUseProgram(0)
         curr_img.draw()
 
-
-    # glEnable(GL_LIGHTING)
-
     if curr_model is not None:
-        print('should be drawing a model')
         glEnable(GL_DEPTH_TEST)
         curr_model.use()
         curr_model.draw()
