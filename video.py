@@ -1,4 +1,5 @@
 import time
+import threading
 
 import numpy as np
 from imutils.video import VideoStream
@@ -7,6 +8,7 @@ from PIL import Image
 from OpenGL.GLUT import glutPostRedisplay
 # import imutils
 import cv2 as cv
+import matplotlib.pyplot as plt
 from constants import *
 import opengl_lib as ogl
 
@@ -25,6 +27,25 @@ curr_video_frame = np.zeros((640, 480, 3))
 matrix = None
 distortion = None
 video_stream = VideoStream(src=0, framerate=20).start()
+threshold = 127
+eigenspace = None
+knn_classifier = None
+classifier_img = None
+show_classifier_img_freq = 0
+
+
+def display_classifier_image(img):
+    # global threshold
+    global show_classifier_img_freq
+    if show_classifier_img_freq % 50 == 0:
+        #Image.fromarray(img).show(title='What the classifier sees')
+        plt.close()
+        print(img.shape)
+        plt.imshow(img, cmap='gray')
+        plt.title('What the classifier sees')
+        plt.show()
+    show_classifier_img_freq = (show_classifier_img_freq + 1) % 50
+
 
 # need 5 points [bottom_left, top, bottom_right, mid_left, mid_right]
 def draw_a(img, imgpts):
@@ -91,7 +112,7 @@ def process_image_for_classification(img, threshold):
     #grey[:, 321:] = BLACKOUT
     img = img[:, :321]
     img = cv.resize(img, (120, 160))
-    img = cv.flip(img, 1)
+    # img = cv.flip(img, 1)
     img = cv.GaussianBlur(img, (15, 15), sigmaX=2.6, sigmaY=2.6)
     return img, grey
 
@@ -128,12 +149,21 @@ def update_scene():
     # TODO: figure out how to use perspective/projection matrix
     # global curr_model, curr_img
     # print('updating scene')
+    global classifier_img
     video_frame = video_stream.read()
+    img = video_frame.copy()
+    print(threshold)
+    img, grey = process_image_for_classification(img, threshold)
+    classifier_img = img
+    img_input = create_image_vector(img, eigenspace)
+    pred_char = predict_letter(img_input, knn_classifier)
+    print(pred_char)
+    # threading.Thread(target=display_classifier_image, args=(img,)).start()
     ogl.curr_img.texture_image = Image.fromarray(video_frame).tobytes('raw', 'RGB', 0, -1)
     grey = cv.cvtColor(video_frame, cv.COLOR_BGR2GRAY)
     ret, corners = cv.findChessboardCorners(grey, (7, 6), None)
     if ret:
-        ogl.curr_model = ogl.char_models[CHARS.index(curr_pred_char)]
+        ogl.curr_model = ogl.char_models[CHARS.index(pred_char)]
         corners2 = cv.cornerSubPix(grey, corners, (11,11), (-1,-1), criteria)
         ret, rvecs, tvecs = cv.solvePnP(objp, corners2, matrix, distortion)
         rmat = np.identity(4)
@@ -148,7 +178,7 @@ def update_scene():
         # tmp = tvecs[1]
         # tvecs[1] = tvecs[2]
         # tvecs[2] = tmp
-        tvecs[2] = -tvecs[2] #if -tvecs[2] > 0 else 0
+        tvecs[2] = -tvecs[2] if -tvecs[2] > 0 else 0
         tvecs[1] = -tvecs[1]
         tvecs[0] = -tvecs[0]
         tmat = np.identity(4)
@@ -178,61 +208,71 @@ def update_scene():
         # ogl.curr_camera_model = tmat @ scale_mat #@ ogl.curr_camera_model #@ inverse_matrix
         # tmat first because we're using column major order
         ogl.curr_camera_model = rmat @ scale_mat @ change_mat @ tmat# np.transpose(ogl.curr_camera_model)
+        # classifier_img = img
     else:
         ogl.curr_model = None
     glutPostRedisplay()
-    
+
+
+def keypress(key, x, y):
+    global threshold
+    if key == ord('+') and threshold < 255:
+        threshold += 1
+    elif key == ord('-') and threshold > 0:
+        threshold -= 1
 
 
 def main():
-    global curr_pred_char, curr_video_frame, matrix, distortion, video_stream
-    # print('loading eigenspace...')
-    # eigenspace = np.load('eigenspace.npy')
+    global curr_pred_char, curr_video_frame, matrix, distortion, video_stream, eigenspace, knn_classifier, threshold
+    print('loading eigenspace...')
+    eigenspace = np.load('eigenspace.npy')
     print('loading classifier...')
     knn_classifier = load('knn_classifier.joblib')
     print('loading camera parameters...')
     cam_params_file = cv.FileStorage('params.yml', cv.FileStorage_READ)
     matrix = cam_params_file.getNode('camera_matrix').mat()
     distortion = cam_params_file.getNode('distortion_coefficients').mat()
+    # threading.Thread(target=display_classifier_image).start()
     print('setting up OpenGL...')
     ogl.launch(update_scene)
 
     show_video = True
-    print('starting camera...')
+    #print('starting camera...')
     # video_stream = VideoStream(src=0, framerate=20).start()
     # time.sleep(2)
-    print('loading screen...')
+    #print('loading screen...')
 
     frame_num = 0
-    threshold = 127
+    #threshold = 127
     while show_video:
-        video_frame = video_stream.read()
+        #video_frame = video_stream.read()
         # curr_video_frame = video_frame.copy()
         # TODO: run model in separate thread - if thread is running then ignore new frames
-        if frame_num % CHECK_FRAME_FREQ == 0:
-            img = video_frame.copy()
-            img, grey = process_image_for_classification(img, threshold)
-            img_input = create_image_vector(img, eigenspace)
-            pred_char = predict_letter(img_input, knn_classifier)
-            curr_pred_char = pred_char
-            print(pred_char)
-            video_frame = display_result(pred_char, video_frame, grey, matrix, distortion)
+        #if frame_num % CHECK_FRAME_FREQ == 0:
+        #    img = video_frame.copy()
+        #    img, grey = process_image_for_classification(img, threshold)
+        #    img_input = create_image_vector(img, eigenspace)
+        #    pred_char = predict_letter(img_input, knn_classifier)
+        #    curr_pred_char = pred_char
+        #    print(pred_char)
+        #    video_frame = display_result(pred_char, video_frame, grey, matrix, distortion)
                 
-        frame_num += 1
-        frame_num = frame_num % CHECK_FRAME_FREQ
+        #frame_num += 1
+        #frame_num = frame_num % CHECK_FRAME_FREQ
         # video_frame[:, 319:321, :] = DIVIDER
-        cv.imshow('Sign with your right hand - hold the markers with your left hand', video_frame) # put instructions in title
-        cv.imshow('What the classifier sees', img)
-        key = cv.waitKey(1) & 0xff
-        if key == ord('q'):
-            show_video = False
-        elif key == ord('-') and threshold > 0:
-            threshold -= 1
-        elif key == ord('+') and threshold < 255:
-            threshold += 1
+        #cv.imshow('Sign with your right hand - hold the markers with your left hand', video_frame) # put instructions in title
+        if classifier_img is not None:
+            cv.imshow('What the classifier sees', classifier_img)
+            key = cv.waitKey(1) & 0xff
+            if key == ord('q'):
+                show_video = False
+            elif key == ord('-') and threshold > 0:
+                threshold -= 1
+            elif key == ord('+') and threshold < 255:
+                threshold += 1
 
     cv.destroyAllWindows()
-    video_stream.stop()
+    #video_stream.stop()
 
 
 if __name__ == '__main__':

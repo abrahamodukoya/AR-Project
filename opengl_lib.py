@@ -1,4 +1,5 @@
 import math
+import threading
 
 from OpenGL.GL import *
 from OpenGL.GLUT import *
@@ -363,4 +364,5 @@ def launch(update_scene_func):
     glutDisplayFunc(display)
     glutIdleFunc(update_scene_func)
     init()
-    glutMainLoop()
+    threading.Thread(target=glutMainLoop).start()
+

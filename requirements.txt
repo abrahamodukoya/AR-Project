@@ -8,3 +8,4 @@ PyOpenGL_accelerate~=3.1.5
 opencv-contrib-python~=4.5.1.48
 opencv-python~=4.5.1.48
 assimp-py~=1.0.2
+matplotlib
