@@ -4,5 +4,6 @@ EIGEN_SORTED_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
 
 
 # model accuracy on validation dataset
-# kNN Accuracy: 0.944347217360868
-# SVM Accuracy: 0.6277563878193909
+# kNN Accuracy: 0.9522226111305565
+# SVM Accuracy: 0.43752187609380466
+# MLP Accuracy: 0.9961498074903745

@@ -8,12 +8,12 @@ from constants import *
 import opengl_lib as ogl
 
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-objp = np.zeros((6*7,3), np.float32)
-objp[:,:2] = np.mgrid[0:7,0:6].T.reshape(-1,2)
+objp = np.zeros((6 * 7, 3), np.float32)
+objp[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
 matrix = None
 distortion = None
 video_stream = VideoStream(src=0, framerate=20).start()
-threshold = 127
+threshold = 140
 eigenspace = None
 knn_classifier = None
 classifier_img = None
@@ -45,7 +45,6 @@ def update_scene():
     global classifier_img
     video_frame = video_stream.read()
     img = video_frame.copy()
-    print(f'Greyscale thresholding value (0 <= value <= 255): {threshold}')
     img, grey = process_image_for_classification(img, threshold)
     classifier_img = img
     img_input = create_image_vector(img, eigenspace)
@@ -53,7 +52,9 @@ def update_scene():
     print(f'Predicted letter: {pred_char}')
     ogl.curr_img.texture_image = Image.fromarray(video_frame).tobytes('raw', 'RGB', 0, -1)
     grey = cv.cvtColor(video_frame, cv.COLOR_BGR2GRAY)
-    ret, corners = cv.findChessboardCorners(grey, (7, 6), None)
+    ret, corners = cv.findChessboardCorners(grey, (7, 6), None,
+                                            cv.CALIB_CB_ADAPTIVE_THRESH + cv.CALIB_CB_NORMALIZE_IMAGE
+                                            + cv.CALIB_CB_FAST_CHECK)
     if ret:
         ogl.curr_model = ogl.char_models[CHARS.index(pred_char)]
         corners2 = cv.cornerSubPix(grey, corners, (11,11), (-1,-1), criteria)
@@ -90,9 +91,9 @@ def update_scene():
 def main():
     global matrix, distortion, eigenspace, knn_classifier, threshold
     print('loading eigenspace...')
-    eigenspace = np.load('blurred_eigenspace.npy')
+    eigenspace = np.load('eigenspace.npy')
     print('loading classifier...')
-    knn_classifier = load('blurred_knn_classifier.joblib')
+    knn_classifier = load('knn_classifier.joblib')
     print('loading camera parameters...')
     cam_params_file = cv.FileStorage('params.yml', cv.FileStorage_READ)
     matrix = cam_params_file.getNode('camera_matrix').mat()
@@ -101,6 +102,7 @@ def main():
     ogl.launch(update_scene)
     print('setting up classifier image view')
     show_video = True
+    print(f'Greyscale thresholding value (0 <= value <= 255): {threshold}')
     while show_video:
         if classifier_img is not None:
             cv.imshow('What the classifier sees', classifier_img)
@@ -109,8 +111,10 @@ def main():
                 show_video = False
             elif key == ord('-') and threshold > 0:
                 threshold -= 1
+                print(f'Greyscale thresholding value (0 <= value <= 255): {threshold}')
             elif key == ord('+') and threshold < 255:
                 threshold += 1
+                print(f'Greyscale thresholding value (0 <= value <= 255): {threshold}')
 
     cv.destroyAllWindows()
 
