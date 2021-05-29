@@ -22,8 +22,8 @@ show_classifier_img_freq = 0
 
 def process_image_for_classification(img, threshold):
     grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    _, img = cv.threshold(grey, threshold, 255, cv.THRESH_TOZERO_INV)
-    img = img[:, :321]
+    img = grey[:, :321].copy()
+    _, img = cv.threshold(img, threshold, 255, cv.THRESH_TOZERO_INV)
     img = cv.resize(img, (120, 160))
     img = cv.GaussianBlur(img, (15, 15), sigmaX=2.6, sigmaY=2.6)
     return img, grey
